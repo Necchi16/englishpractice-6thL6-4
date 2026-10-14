@@ -467,9 +467,17 @@
         let s = text.trim();
         s = s.replace(/[\.\,\!]+$/, "").trim().toLowerCase();
         
-        if (s.startsWith("i ")) s = s.substring(2).trim();
         if (s.startsWith("my best memory is ")) s = s.substring(18).trim();
         if (s.startsWith("it was ")) s = s.substring(7).trim();
+        if (s.startsWith("it is ")) s = s.substring(6).trim();
+        if (s.startsWith("i was ")) s = s.substring(6).trim();
+        if (s.startsWith("we were ")) s = s.substring(8).trim();
+        if (s.startsWith("i am ")) s = s.substring(5).trim();
+        if (s.startsWith("i ")) s = s.substring(2).trim();
+        if (s.startsWith("we ")) s = s.substring(3).trim();
+        if (s.startsWith("was ")) s = s.substring(4).trim();
+        if (s.startsWith("were ")) s = s.substring(5).trim();
+        if (s.startsWith("is ")) s = s.substring(3).trim();
         
         return s;
       };
