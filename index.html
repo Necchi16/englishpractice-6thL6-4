@@ -833,13 +833,21 @@
                 {savedWorks.length > 0 && (
                   <div className="mb-8 text-left bg-gray-50 p-4 rounded-xl border-2 border-gray-200">
                     <h3 className="font-bold text-gray-700 mb-3">📁 つくった さくひん</h3>
-                    <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                    <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                       {savedWorks.map((work, idx) => (
-                        <div key={idx} className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+                        <div key={idx} className="flex flex-col gap-2 bg-white p-3 rounded-lg shadow-sm border border-gray-100">
                           <span className="text-sm font-bold text-gray-600">{work.date} の作品 ({savedWorks.length - idx})</span>
-                          <div className="flex gap-2">
-                            <button onClick={() => { setViewingWork(work); goToStep('VIEW_WORKSHEET'); }} className="text-sm bg-yellow-100 hover:bg-yellow-200 text-yellow-800 font-bold py-2 px-4 rounded shadow-sm border border-yellow-300">ノート</button>
-                            <button onClick={() => { setViewingWork(work); goToStep('VIEW_SLIDESHOW'); setCurrentSlideIndex(0); resetSlideVoice(); }} className="text-sm bg-teal-100 hover:bg-teal-200 text-teal-800 font-bold py-2 px-4 rounded shadow-sm border border-teal-300">スライド</button>
+                          <div className="flex flex-wrap gap-2">
+                            <button onClick={() => { setViewingWork(work); goToStep('VIEW_WORKSHEET'); }} className="text-sm bg-yellow-100 hover:bg-yellow-200 text-yellow-800 font-bold py-2 px-3 rounded shadow-sm border border-yellow-300 flex-1 min-w-[80px] transition">ノート</button>
+                            <button onClick={() => { setViewingWork(work); goToStep('VIEW_SLIDESHOW'); setCurrentSlideIndex(0); resetSlideVoice(); }} className="text-sm bg-teal-100 hover:bg-teal-200 text-teal-800 font-bold py-2 px-3 rounded shadow-sm border border-teal-300 flex-1 min-w-[80px] transition">スライド</button>
+                            {/* 新しく追加した「修正」ボタン */}
+                            <button onClick={() => { 
+                              setViewingWork(work); 
+                              setAnswers(JSON.parse(JSON.stringify(work.answers))); 
+                              goToStep('EDIT_WORK'); 
+                            }} className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded shadow-sm border border-gray-300 flex-1 min-w-[80px] transition flex items-center justify-center gap-1">
+                              <span>✏️</span> 修正
+                            </button>
                           </div>
                         </div>
                       ))}
@@ -1112,6 +1120,67 @@
           </div>
         );
       } 
+      else if (step === 'EDIT_WORK') {
+        content = (
+          <div className="min-h-screen bg-gray-100 p-4 flex flex-col items-center py-12 relative">
+            <BackButton />
+            <HomeButton />
+            <div className="w-full max-w-3xl bg-white p-4 md:p-8 rounded-3xl shadow-xl border-4 border-gray-300 relative">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-700 mb-6 text-center">✏️ スライドの文章と画像を 直す</h2>
+              <p className="text-center font-bold text-gray-500 mb-8">過去に作ったスライドの文章や、画像のアドレスを手直しできます。</p>
+              
+              <div className="mb-8 space-y-6">
+                {answers.map((ans, idx) => (
+                  <div key={idx} className="bg-gray-50 p-4 md:p-6 rounded-2xl border border-gray-200 shadow-sm">
+                    <div className="font-bold text-gray-700 mb-4 border-b-2 border-gray-200 pb-2">スライド {idx + 1}</div>
+                    
+                    <div className="mb-6">
+                      <label className="block text-sm font-bold text-teal-700 mb-2 flex items-center gap-1"><span>📝</span> 英文の修正</label>
+                      <div className="flex items-center flex-wrap gap-2 bg-white p-3 rounded-lg border border-gray-200">
+                        <span className="text-gray-800 font-note text-lg md:text-2xl">{ans.prefix}</span>
+                        <input type="text" value={ans.en} onChange={e => {
+                          const newAnswers = [...answers];
+                          newAnswers[idx].en = e.target.value;
+                          setAnswers(newAnswers);
+                        }} className="flex-1 min-w-[150px] border-b-2 border-teal-400 focus:outline-none focus:bg-teal-50 px-2 py-1 text-teal-700 bg-transparent font-note text-lg md:text-2xl transition" />
+                        <span className="text-gray-800 font-note text-lg md:text-2xl">{ans.suffix}</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-bold text-blue-700 mb-2 flex items-center gap-1"><span>🖼️</span> 画像アドレスの修正</label>
+                      <input type="text" value={ans.img || ''} onChange={e => {
+                          const newAnswers = [...answers];
+                          newAnswers[idx].img = e.target.value;
+                          setAnswers(newAnswers);
+                      }} className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-400 focus:bg-blue-50 text-sm font-mono mb-2 transition" placeholder="https://..." />
+                      {ans.img && (
+                          <div className="relative inline-block mt-2">
+                            <img src={ans.img} alt="preview" className="h-24 md:h-32 object-cover rounded-lg shadow border border-gray-300" onError={(e) => {
+                                e.target.style.display='none';
+                                e.target.parentElement.innerHTML = '<span class="text-xs text-red-500 font-bold bg-red-50 p-2 rounded border border-red-200">画像が読み込めません</span>';
+                            }} />
+                          </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <button onClick={() => {
+                // 保存処理
+                const updatedWorks = savedWorks.map(w => w.date === viewingWork.date ? { ...w, answers: answers } : w);
+                setSavedWorks(updatedWorks);
+                localStorage.setItem('myBestMemoryWorks_V3', JSON.stringify(updatedWorks));
+                setViewingWork(null);
+                goBack(); // HOMEに戻る
+              }} className="w-full bg-blue-500 text-white text-xl md:text-2xl font-bold py-5 rounded-2xl shadow-lg hover:bg-blue-600 transition transform hover:-translate-y-1 flex items-center justify-center gap-2">
+                <span>💾</span> 修正を 保存する！
+              </button>
+            </div>
+          </div>
+        );
+      }
       else if (step === 'IMAGE_INPUT') {
         const canProceedToQuiz = answers.every(ans => ans.img && ans.img.trim() !== "");
 
