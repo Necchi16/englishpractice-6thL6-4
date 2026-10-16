@@ -536,11 +536,39 @@
           isDone = true;
           clearTimeout(fallbackTimer);
           
+          let cleanedEn = cleanTrans(rawEn);
+          let dynamicPrefix = inp.prefix;
+
+          // プレフィックスの動的調整 (I was / It was などの切り替え)
+          const lowerRaw = rawEn.toLowerCase().trim();
+          if (inp.type === 'feeling') {
+              if (lowerRaw.startsWith("i was ")) {
+                  dynamicPrefix = "I was ";
+              } else if (lowerRaw.startsWith("we were ")) {
+                  dynamicPrefix = "We were ";
+              } else if (lowerRaw.startsWith("i felt ")) {
+                  dynamicPrefix = "I felt ";
+                  if (cleanedEn.startsWith("felt ")) cleanedEn = cleanedEn.substring(5).trim();
+              } else if (lowerRaw.startsWith("it was ")) {
+                  dynamicPrefix = "It was ";
+              } else if (lowerRaw.startsWith("it is ")) {
+                  dynamicPrefix = "It is ";
+              } else {
+                  dynamicPrefix = "It was "; 
+              }
+          } else if (inp.type === 'action') {
+              if (lowerRaw.startsWith("we ")) {
+                  dynamicPrefix = "We ";
+              } else if (lowerRaw.startsWith("i ")) {
+                  dynamicPrefix = "I ";
+              }
+          }
+          
           const newAnswers = answers ? [...answers] : Array(inputs.length).fill(null);
-          const cleanedEn = cleanTrans(rawEn);
           
           newAnswers[idx] = { 
             ...inp, 
+            prefix: dynamicPrefix,
             en: cleanedEn, 
             rawEn: rawEn, 
             img: "" 
@@ -559,11 +587,41 @@
 
       const handleManualTranslateComplete = (idx) => {
         if (!manualInputs[idx]) return;
+
+        const rawEn = manualInputs[idx];
+        let cleanedEn = cleanTrans(rawEn);
+        let dynamicPrefix = inputs[idx].prefix;
+        const lowerRaw = rawEn.toLowerCase().trim();
+
+        if (inputs[idx].type === 'feeling') {
+            if (lowerRaw.startsWith("i was ")) {
+                dynamicPrefix = "I was ";
+            } else if (lowerRaw.startsWith("we were ")) {
+                dynamicPrefix = "We were ";
+            } else if (lowerRaw.startsWith("i felt ")) {
+                dynamicPrefix = "I felt ";
+                if (cleanedEn.startsWith("felt ")) cleanedEn = cleanedEn.substring(5).trim();
+            } else if (lowerRaw.startsWith("it was ")) {
+                dynamicPrefix = "It was ";
+            } else if (lowerRaw.startsWith("it is ")) {
+                dynamicPrefix = "It is ";
+            } else {
+                dynamicPrefix = "It was ";
+            }
+        } else if (inputs[idx].type === 'action') {
+            if (lowerRaw.startsWith("we ")) {
+                dynamicPrefix = "We ";
+            } else if (lowerRaw.startsWith("i ")) {
+                dynamicPrefix = "I ";
+            }
+        }
+
         const newAnswers = answers ? [...answers] : Array(inputs.length).fill(null);
         newAnswers[idx] = { 
             ...inputs[idx], 
-            en: cleanTrans(manualInputs[idx]), 
-            rawEn: manualInputs[idx],
+            prefix: dynamicPrefix,
+            en: cleanedEn, 
+            rawEn: rawEn,
             img: "" 
         };
         setAnswers(newAnswers);
@@ -995,6 +1053,10 @@
                   {inp.type === 'action' && (
                     <div className="mb-2">
                       <p className="font-bold text-sm text-gray-600 mb-1">何をしたか書こう： <span className="text-gray-400 font-normal">例: {inp.example}</span></p>
+                      <div className="bg-blue-50 text-blue-700 text-xs p-2 rounded-lg mb-2 border border-blue-200 shadow-sm flex items-start gap-1">
+                         <span className="text-sm">💡</span>
+                         <p>「たくさん走った」「お弁当を食べた」のように、<br className="md:hidden" /><span className="font-black underline">「〜をした」</span>という形で書くと ほんやく されやすいよ！</p>
+                      </div>
                       <input type="text" value={inp.action} onChange={e => {
                           const newInputs = [...inputs];
                           newInputs[idx].action = e.target.value;
@@ -1012,6 +1074,10 @@
                   {inp.type === 'feeling' && (
                     <div className="mb-2">
                       <p className="font-bold text-sm text-gray-600 mb-1">どんな気持ちだったか、感想を書こう： <span className="text-gray-400 font-normal">例: {inp.example}</span></p>
+                      <div className="bg-purple-50 text-purple-700 text-xs p-2 rounded-lg mb-2 border border-purple-200 shadow-sm flex items-start gap-1">
+                         <span className="text-sm">💡</span>
+                         <p>「楽しかった」「幸せだった」など自由に書いてみよう！</p>
+                      </div>
                       <input type="text" value={inp.action} onChange={e => {
                           const newInputs = [...inputs];
                           newInputs[idx].action = e.target.value;
